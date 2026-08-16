@@ -1,16 +1,12 @@
 import 'dotenv/config';
 import express from 'express';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
 import { initDatabase } from './server/db.js';
 import { authRouter } from './server/routes/auth.js';
 import { doctorsRouter } from './server/routes/doctors.js';
 import { appointmentsRouter } from './server/routes/appointments.js';
 import { adminRouter } from './server/routes/admin.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 async function startServer() {
   // Initialize SQLite tables and seed data
