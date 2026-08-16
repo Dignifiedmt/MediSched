@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useToast } from '../../context/ToastContext.jsx';
 import { Logo } from '../Logo.jsx';
 import {
   X,
@@ -20,6 +21,7 @@ import {
 
 export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onOpenClinicRegister }) => {
   const { login, registerPatient } = useAuth();
+  const { toast } = useToast();
   const [mode, setMode] = useState(initialMode); // 'login' | 'register'
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -49,10 +51,16 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onOpenClinic
     const passwordToUse = customPassword || loginPassword;
 
     try {
-      await login(emailToUse, passwordToUse);
+      const data = await login(emailToUse, passwordToUse);
+      const userName = data?.user?.full_name || 'User';
+      toast.success(`Welcome back, ${userName}!`, {
+        title: 'Signed In Successfully'
+      });
       onClose();
     } catch (err) {
-      setError(err.message || 'Login failed. Please check your credentials.');
+      const msg = err.message || 'Login failed. Please check your credentials.';
+      setError(msg);
+      toast.error(msg, { title: 'Sign In Failed' });
     } finally {
       setLoading(false);
     }
@@ -70,19 +78,23 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onOpenClinic
     setError('');
 
     if (regPassword !== regConfirmPassword) {
-      setError('Passwords do not match. Please re-enter.');
+      const msg = 'Passwords do not match. Please re-enter.';
+      setError(msg);
+      toast.warning(msg);
       return;
     }
 
     if (regPassword.length < 6) {
-      setError('Password must be at least 6 characters long.');
+      const msg = 'Password must be at least 6 characters long.';
+      setError(msg);
+      toast.warning(msg);
       return;
     }
 
     setLoading(true);
 
     try {
-      await registerPatient({
+      const data = await registerPatient({
         full_name: regName,
         email: regEmail,
         phone: regPhone,
@@ -91,11 +103,17 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login', onOpenClinic
         gender: regGender
       });
       setSuccessMsg('Patient account created successfully!');
+      toast.success(`Patient account created successfully! Welcome, ${regName}.`, {
+        title: 'Account Created',
+        duration: 5000
+      });
       setTimeout(() => {
         onClose();
       }, 500);
     } catch (err) {
-      setError(err.message || 'Patient registration failed.');
+      const msg = err.message || 'Patient registration failed.';
+      setError(msg);
+      toast.error(msg, { title: 'Registration Failed' });
     } finally {
       setLoading(false);
     }

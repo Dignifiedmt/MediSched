@@ -2,6 +2,7 @@ import React from 'react';
 import { Logo } from './Logo.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
+import { useToast } from '../context/ToastContext.jsx';
 import {
   Stethoscope,
   Building2,
@@ -24,7 +25,15 @@ export const Header = ({
 }) => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme, isDark } = useTheme();
+  const { toast } = useToast();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+
+  const handleLogout = () => {
+    logout();
+    toast.info('You have been signed out successfully.', {
+      title: 'Signed Out'
+    });
+  };
 
   const handleNav = (view) => {
     onNavigate(view);
@@ -186,7 +195,7 @@ export const Header = ({
 
                 <button
                   id="btn-header-logout"
-                  onClick={logout}
+                  onClick={handleLogout}
                   title="Sign out"
                   className="p-2 rounded-xl text-emerald-300 hover:text-rose-300 hover:bg-rose-950/40 transition-colors cursor-pointer"
                 >
@@ -291,7 +300,7 @@ export const Header = ({
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    logout();
+                    handleLogout();
                   }}
                   className="w-full py-2 rounded-xl bg-rose-950/60 text-rose-300 font-bold flex items-center justify-center gap-2 border border-rose-900"
                 >

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api.js';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useToast } from '../../context/ToastContext.jsx';
 import {
   Calendar,
   Clock,
@@ -21,6 +22,7 @@ export const SlotPickerModal = ({
   onRequireAuth
 }) => {
   const { user } = useAuth();
+  const { toast } = useToast();
 
   // Selected date (defaults to tomorrow or nearest future day)
   const getInitialDate = () => {
@@ -99,11 +101,20 @@ export const SlotPickerModal = ({
       });
 
       if (response && response.appointment) {
+        toast.success(
+          `Appointment confirmed with ${doctor.name} for ${selectedDate} at ${selectedSlot.start_time}. Reference: ${response.appointment.appointment_code}`,
+          {
+            title: 'Consultation Booked',
+            duration: 6000
+          }
+        );
         onBookingSuccess(response.appointment);
         onClose();
       }
     } catch (err) {
-      setErrorMessage(err.message || 'Booking failed. Slot might have just been reserved.');
+      const msg = err.message || 'Booking failed. Slot might have just been reserved.';
+      setErrorMessage(msg);
+      toast.error(msg, { title: 'Booking Failed' });
     } finally {
       setBookingLoading(false);
     }

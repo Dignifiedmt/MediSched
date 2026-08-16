@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useToast } from '../../context/ToastContext.jsx';
 import { Logo } from '../Logo.jsx';
 import {
   X,
@@ -18,6 +19,7 @@ import {
 
 export const ClinicRegisterModal = ({ isOpen, onClose, onSuccess }) => {
   const { registerClinic } = useAuth();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -45,12 +47,16 @@ export const ClinicRegisterModal = ({ isOpen, onClose, onSuccess }) => {
     setError('');
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match. Please verify.');
+      const msg = 'Passwords do not match. Please verify.';
+      setError(msg);
+      toast.warning(msg);
       return;
     }
 
     if (password.length < 6) {
-      setError('Administrator password must be at least 6 characters long.');
+      const msg = 'Administrator password must be at least 6 characters long.';
+      setError(msg);
+      toast.warning(msg);
       return;
     }
 
@@ -72,12 +78,18 @@ export const ClinicRegisterModal = ({ isOpen, onClose, onSuccess }) => {
       });
 
       setSuccess(true);
+      toast.success(`${facilityName} registered successfully in the Kaduna Health Network!`, {
+        title: 'Facility Registered',
+        duration: 6000
+      });
       setTimeout(() => {
         if (onSuccess) onSuccess();
         onClose();
       }, 1000);
     } catch (err) {
-      setError(err.message || 'Facility registration failed.');
+      const msg = err.message || 'Facility registration failed.';
+      setError(msg);
+      toast.error(msg, { title: 'Registration Failed' });
     } finally {
       setLoading(false);
     }

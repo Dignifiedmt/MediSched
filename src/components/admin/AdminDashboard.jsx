@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useToast } from '../../context/ToastContext.jsx';
 import { api } from '../../services/api.js';
 import { StatusBadge } from '../StatusBadge.jsx';
 import { AppointmentReceiptModal } from '../AppointmentReceiptModal.jsx';
@@ -29,6 +30,7 @@ import {
 
 export const AdminDashboard = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
 
   // Navigation tab within Admin Portal
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'doctors' | 'appointments' | 'capacity' | 'patients'
@@ -202,6 +204,9 @@ export const AdminDashboard = () => {
           buffer_duration: Number(docBufferDuration) >= 0 ? Number(docBufferDuration) : 10,
           schedules: schedulePayload
         });
+        toast.success(`Doctor profile & consultation roster for ${docName} updated.`, {
+          title: 'Doctor Updated'
+        });
       } else {
         await api.createDoctor({
           full_name: docName,
@@ -221,12 +226,18 @@ export const AdminDashboard = () => {
           buffer_duration: Number(docBufferDuration) >= 0 ? Number(docBufferDuration) : 10,
           schedules: schedulePayload
         });
+        toast.success(`Doctor account for ${docName} provisioned successfully with 40-minute consultation cycle roster.`, {
+          title: 'Doctor Provisioned',
+          duration: 5000
+        });
       }
 
       setDoctorModalOpen(false);
       await loadData();
     } catch (err) {
-      setDocModalError(err.message || 'Failed to save doctor details.');
+      const msg = err.message || 'Failed to save doctor details.';
+      setDocModalError(msg);
+      toast.error(msg, { title: 'Save Failed' });
     } finally {
       setSavingDoc(false);
     }
@@ -237,8 +248,12 @@ export const AdminDashboard = () => {
     try {
       await api.toggleDoctorStatus(docId);
       await loadData();
+      toast.info('Doctor availability status toggled.', {
+        title: 'Status Updated'
+      });
     } catch (err) {
-      alert(err.message || 'Failed to toggle status');
+      const msg = err.message || 'Failed to toggle status';
+      toast.error(msg, { title: 'Toggle Failed' });
     }
   };
 
@@ -247,8 +262,12 @@ export const AdminDashboard = () => {
     try {
       await api.updateAppointmentStatus(aptId, { status: newStatus });
       await loadData();
+      toast.success(`Appointment status updated to ${newStatus}.`, {
+        title: 'Appointment Updated'
+      });
     } catch (err) {
-      alert(err.message || 'Failed to update appointment');
+      const msg = err.message || 'Failed to update appointment';
+      toast.error(msg, { title: 'Update Failed' });
     }
   };
 

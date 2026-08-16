@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useToast } from '../../context/ToastContext.jsx';
 import { api } from '../../services/api.js';
 import {
   User,
@@ -14,6 +15,7 @@ import {
 
 export const PatientProfile = () => {
   const { user, refreshUser } = useAuth();
+  const { toast } = useToast();
 
   const [fullName, setFullName] = useState(user?.full_name || '');
   const [phone, setPhone] = useState(user?.phone || '');
@@ -40,9 +42,15 @@ export const PatientProfile = () => {
         gender
       });
       await refreshUser();
-      setSuccessMsg('Profile updated successfully.');
+      const msg = 'Profile updated successfully.';
+      setSuccessMsg(msg);
+      toast.success('Your patient profile details have been saved successfully.', {
+        title: 'Profile Updated'
+      });
     } catch (err) {
-      setErrorMsg(err.message || 'Failed to update profile.');
+      const msg = err.message || 'Failed to update profile.';
+      setErrorMsg(msg);
+      toast.error(msg, { title: 'Update Failed' });
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api.js';
+import { useToast } from '../../context/ToastContext.jsx';
 import { StatusBadge } from '../StatusBadge.jsx';
 import { AppointmentReceiptModal } from '../AppointmentReceiptModal.jsx';
 import {
@@ -18,6 +19,7 @@ import {
 } from 'lucide-react';
 
 export const PatientAppointments = ({ onBookNew }) => {
+  const { toast } = useToast();
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterTab, setFilterTab] = useState('upcoming'); // 'upcoming' | 'completed' | 'all'
@@ -68,14 +70,19 @@ export const PatientAppointments = ({ onBookNew }) => {
   const handleCancelSubmit = async (e) => {
     e.preventDefault();
     if (!cancellingApt) return;
+    const aptRef = cancellingApt.appointment_code;
     setCancelLoading(true);
     try {
       await api.cancelAppointment(cancellingApt.id, cancelReason || 'Cancelled by patient');
       setCancellingApt(null);
       setCancelReason('');
       await loadAppointments();
+      toast.info(`Appointment ${aptRef} has been cancelled successfully.`, {
+        title: 'Appointment Cancelled'
+      });
     } catch (err) {
-      alert(err.message || 'Failed to cancel appointment');
+      const msg = err.message || 'Failed to cancel appointment';
+      toast.error(msg, { title: 'Cancellation Failed' });
     } finally {
       setCancelLoading(false);
     }
@@ -119,10 +126,21 @@ export const PatientAppointments = ({ onBookNew }) => {
         appointment_date: rescheduleDate,
         start_time: selectedNewSlot.start_time
       });
+      const doctorName = reschedulingApt.doctor_name;
+      const targetDate = rescheduleDate;
+      const targetTime = selectedNewSlot.start_time;
       setReschedulingApt(null);
       await loadAppointments();
+      toast.success(
+        `Consultation with ${doctorName} moved to ${targetDate} at ${targetTime}.`,
+        {
+          title: 'Consultation Rescheduled'
+        }
+      );
     } catch (err) {
-      setRescheduleError(err.message || 'Failed to reschedule appointment.');
+      const msg = err.message || 'Failed to reschedule appointment.';
+      setRescheduleError(msg);
+      toast.error(msg, { title: 'Rescheduling Failed' });
     } finally {
       setRescheduleLoading(false);
     }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useToast } from '../../context/ToastContext.jsx';
 import { api } from '../../services/api.js';
 import { StatusBadge } from '../StatusBadge.jsx';
 import {
@@ -38,6 +39,7 @@ const DAYS_OF_WEEK = [
 
 export const DoctorDashboard = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('queue'); // 'queue' | 'settings' | 'upcoming'
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -113,8 +115,31 @@ export const DoctorDashboard = () => {
         const updated = await api.getAppointment(aptId);
         setSelectedAppointment(updated.appointment);
       }
+
+      if (newStatus === 'Checked In') {
+        toast.success('Patient checked in and marked present in waiting area.', {
+          title: 'Patient Checked In'
+        });
+      } else if (newStatus === 'In Progress') {
+        toast.info('Consultation started in 40-minute active clinical cycle.', {
+          title: 'Consultation In Progress'
+        });
+      } else if (newStatus === 'No Show') {
+        toast.warning('Appointment recorded as No Show.', {
+          title: 'Status Updated'
+        });
+      } else if (newStatus === 'Cancelled') {
+        toast.info('Appointment marked as Cancelled.', {
+          title: 'Status Updated'
+        });
+      } else {
+        toast.success(`Consultation status updated to ${newStatus}.`, {
+          title: 'Status Updated'
+        });
+      }
     } catch (err) {
-      alert(err.message || 'Failed to update consultation status');
+      const msg = err.message || 'Failed to update consultation status';
+      toast.error(msg, { title: 'Status Update Failed' });
     }
   };
 
@@ -128,12 +153,21 @@ export const DoctorDashboard = () => {
         consultation_notes: notes,
         prescription: prescription
       });
+      const ptName = completingApt.patient_name || 'Patient';
       setCompletingApt(null);
       setNotes('');
       setPrescription('');
       await loadAppointments();
+      toast.success(
+        `Consultation with ${ptName} completed and clinical assessment recorded.`,
+        {
+          title: 'Consultation Completed',
+          duration: 5000
+        }
+      );
     } catch (err) {
-      alert(err.message || 'Failed to complete consultation');
+      const msg = err.message || 'Failed to complete consultation';
+      toast.error(msg, { title: 'Completion Failed' });
     } finally {
       setUpdatingApt(false);
     }
@@ -157,11 +191,17 @@ export const DoctorDashboard = () => {
       };
 
       const res = await api.updateDoctorSettings(payload);
-      setSaveSuccessMessage('Consultation time and scheduling settings updated successfully!');
+      const msg = 'Consultation time and scheduling settings updated successfully!';
+      setSaveSuccessMessage(msg);
+      toast.success('Consultation cycle timings, fees, and weekly roster saved.', {
+        title: 'Doctor Settings Saved'
+      });
       setTimeout(() => setSaveSuccessMessage(''), 4000);
       await loadDoctorSettings();
     } catch (err) {
-      setSaveErrorMessage(err.message || 'Failed to update settings.');
+      const msg = err.message || 'Failed to update settings.';
+      setSaveErrorMessage(msg);
+      toast.error(msg, { title: 'Settings Save Failed' });
     } finally {
       setSettingsSaving(false);
     }

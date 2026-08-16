@@ -10,16 +10,28 @@ import {
   FileCheck,
   ShieldCheck,
   Building2,
-  Phone
+  Phone,
+  Copy
 } from 'lucide-react';
 import { Logo } from './Logo.jsx';
 import { StatusBadge } from './StatusBadge.jsx';
+import { useToast } from '../context/ToastContext.jsx';
 
 export const AppointmentReceiptModal = ({ appointment, onClose }) => {
+  const { toast } = useToast();
   if (!appointment) return null;
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleCopyCode = () => {
+    if (appointment?.appointment_code) {
+      navigator.clipboard.writeText(appointment.appointment_code);
+      toast.info(`Appointment reference ${appointment.appointment_code} copied to clipboard!`, {
+        title: 'Copied to Clipboard'
+      });
+    }
   };
 
   const formatDateLong = (dateStr) => {
@@ -76,9 +88,18 @@ export const AppointmentReceiptModal = ({ appointment, onClose }) => {
               <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
                 Appointment Reference
               </span>
-              <span className="text-lg font-mono font-bold text-emerald-800 tracking-tight">
-                {appointment.appointment_code}
-              </span>
+              <div className="flex items-center sm:justify-end gap-1.5 mt-0.5">
+                <span className="text-lg font-mono font-bold text-emerald-800 tracking-tight">
+                  {appointment.appointment_code}
+                </span>
+                <button
+                  onClick={handleCopyCode}
+                  title="Copy Appointment Reference Code"
+                  className="p-1 rounded-md text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 transition-colors print:hidden cursor-pointer"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+              </div>
               <div className="mt-1">
                 <StatusBadge status={appointment.status} size="sm" />
               </div>
