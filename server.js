@@ -17,17 +17,19 @@ async function startServer() {
   initDatabase();
 
   const app = express();
-  const PORT = 3000;
+  const PORT = parseInt(process.env.PORT || '3000', 10);
 
   app.use(express.json());
 
-  // API Routes
+  // Health check endpoint for Railway, Render, Fly.io, etc.
   app.get('/api/health', (req, res) => {
     res.json({
       status: 'ok',
       service: 'MediSched NG API',
       timestamp: new Date().toISOString(),
-      city: 'Kaduna, Nigeria'
+      city: 'Kaduna, Nigeria',
+      port: PORT,
+      env: process.env.NODE_ENV || 'development'
     });
   });
 
@@ -37,23 +39,37 @@ async function startServer() {
   app.use('/api/admin', adminRouter);
 
   // Development vs Production serving
-  if (process.env.NODE_ENV !== 'production') {
+  if (process.env.NODE_ENV === 'production') {
+    const distPath = path.resolve(process.cwd(), 'dist');
+    app.use(express.static(distPath));
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
+  } else {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa'
     });
     app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(__dirname, 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[MediSched NG] Server running on http://0.0.0.0:${PORT}`);
+  const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`[MediSched NG] Server successfully started and listening on http://0.0.0.0:${PORT} (env: ${process.env.NODE_ENV || 'development'})`);
   });
+
+  // Graceful shutdown handling for container platforms
+  const handleShutdown = (signal) => {
+    console.log(`[MediSched NG] Received ${signal}, gracefully shutting down...`);
+    server.close(() => {
+      console.log('[MediSched NG] HTTP server closed');
+      process.exit(0);
+    });
+  };
+
+  process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+  process.on('SIGINT', () => handleShutdown('SIGINT'));
+
+  return server;
 }
 
 startServer().catch((err) => {
